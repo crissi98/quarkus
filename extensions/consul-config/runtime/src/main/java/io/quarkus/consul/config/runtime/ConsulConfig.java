@@ -106,6 +106,19 @@ public class ConsulConfig {
         public Optional<String> keyStorePassword;
 
         /**
+         * KeyStore to be used containing the SSL certificate used by Consul agent
+         * Can be either a classpath resource or a file system path
+         */
+        @ConfigItem
+        public Optional<Path> trustStore;
+
+        /**
+         * Password of KeyStore to be used containing the SSL certificate used by Consul agent
+         */
+        @ConfigItem
+        public Optional<String> trustStorePassword;
+
+        /**
          * When using HTTPS and no keyStore has been specified, whether or not to trust all certificates
          */
         @ConfigItem(defaultValue = "false")
