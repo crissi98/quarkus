@@ -93,17 +93,23 @@ public class ConsulConfig {
         Optional<String> token;
 
         /**
-         * KeyStore to be used containing the SSL certificate used by Consul agent
+         * KeyStore to be used containing the SSL client certificate for authorization with Consul agent
          * Can be either a classpath resource or a file system path
          */
         @ConfigItem
         public Optional<Path> keyStore;
 
         /**
-         * Password of KeyStore to be used containing the SSL certificate used by Consul agent
+         * Password of KeyStore to be used containing the SSL client certificate for authorization with Consul agent
          */
         @ConfigItem
         public Optional<String> keyStorePassword;
+
+        /**
+         * Password of the key in the KeyStore to be used containing the SSL client certificate for authorization with Consul agent
+         */
+        @ConfigItem
+        public Optional<String> keyPassword;
 
         /**
          * KeyStore to be used containing the SSL certificate used by Consul agent

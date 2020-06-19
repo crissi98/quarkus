@@ -1,14 +1,8 @@
 package io.quarkus.consul.config.runtime;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.*;
-import java.security.cert.CertificateException;
-import java.util.List;
-import java.util.Optional;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -24,9 +18,20 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.List;
+import java.util.Optional;
+
+;
 
 class DefaultConsulConfigGateway implements ConsulConfigGateway {
 
@@ -38,27 +43,27 @@ class DefaultConsulConfigGateway implements ConsulConfigGateway {
 
     public DefaultConsulConfigGateway(ConsulConfig consulConfig) {
         this.consulConfig = consulConfig;
-        if (consulConfig.agent.keyStore.isPresent() || consulConfig.agent.trustStore.isPresent()) {
-            this.sslSocketFactory = createFactoryFromKeyStore(consulConfig.agent.keyStore,
-                    consulConfig.agent.keyStorePassword, consulConfig.agent.trustStore, consulConfig.agent.trustStorePassword);
-        } else if (consulConfig.agent.trustCerts) {
-            this.sslSocketFactory = createAllTrustingFactory();
+        if (consulConfig.agent.keyStore.isPresent() || consulConfig.agent.trustStore.isPresent()
+                || consulConfig.agent.trustCerts) {
+            this.sslSocketFactory = createFactoryFromAgentConfig(consulConfig.agent);
         } else {
             this.sslSocketFactory = null;
         }
 
     }
 
-    private SSLConnectionSocketFactory createFactoryFromKeyStore(Optional<Path> keyStorePath, Optional<String> keyStorePassword,
-            Optional<Path> trustStorePath, Optional<String> trustStorePassword) {
+    private SSLConnectionSocketFactory createFactoryFromAgentConfig(ConsulConfig.AgentConfig config) {
         try {
             SSLContextBuilder sslContextBuilder = SSLContexts.custom();
-            if (trustStorePath.isPresent()) {
-                sslContextBuilder = sslContextBuilder.loadTrustMaterial(readStore(keyStorePath.get(), keyStorePassword), null);
+            if (config.trustStore.isPresent()) {
+                sslContextBuilder = sslContextBuilder
+                        .loadTrustMaterial(readStore(config.trustStore.get(), config.trustStorePassword), null);
+            } else if (config.trustCerts) {
+                sslContextBuilder = sslContextBuilder.loadTrustMaterial(TrustAllStrategy.INSTANCE);
             }
-            if (keyStorePath.isPresent()) {
-                sslContextBuilder = sslContextBuilder.loadKeyMaterial(readStore(trustStorePath.get(), trustStorePassword),
-                        null);
+            if (config.keyStore.isPresent()) {
+                sslContextBuilder = sslContextBuilder.loadKeyMaterial(readStore(config.keyStore.get(), config.keyStorePassword),
+                        config.keyPassword.orElse("").toCharArray());
             }
             return new SSLConnectionSocketFactory(sslContextBuilder.build(), NoopHostnameVerifier.INSTANCE);
         } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException | IOException | CertificateException
@@ -98,16 +103,6 @@ class DefaultConsulConfigGateway implements ConsulConfigGateway {
         KeyStore keyStore = KeyStore.getInstance(keyStoreType);
         keyStore.load(keyStoreStream, keyStorePassword.isPresent() ? keyStorePassword.get().toCharArray() : null);
         return keyStore;
-    }
-
-    private SSLConnectionSocketFactory createAllTrustingFactory() {
-        try {
-            return new SSLConnectionSocketFactory(
-                    SSLContexts.custom().loadTrustMaterial(TrustAllStrategy.INSTANCE).build(),
-                    NoopHostnameVerifier.INSTANCE);
-        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
