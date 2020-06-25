@@ -17,22 +17,26 @@ class ConsulConfigSourceProvider implements ConfigSourceProvider {
     private static final Logger log = Logger.getLogger(ConsulConfigSourceProvider.class);
 
     private final ConsulConfig config;
+    private final ConsulConfig.ConsulRefreshConfig refreshConfig;
 
     private final ConsulConfigGateway consulConfigGateway;
     private final ResponseConfigSourceUtil responseConfigSourceUtil;
 
-    public ConsulConfigSourceProvider(ConsulConfig config) {
-        this(config, new DefaultConsulConfigGateway(config), new ResponseConfigSourceUtil());
+    public ConsulConfigSourceProvider(ConsulConfig config, ConsulConfig.ConsulRefreshConfig refreshConfig) {
+        this(config, refreshConfig, new DefaultConsulConfigGateway(config), new ResponseConfigSourceUtil());
     }
 
     // visible for testing
-    ConsulConfigSourceProvider(ConsulConfig config, ConsulConfigGateway consulConfigGateway) {
-        this(config, consulConfigGateway, new ResponseConfigSourceUtil());
+    ConsulConfigSourceProvider(ConsulConfig config, ConsulConfig.ConsulRefreshConfig refreshConfig,
+            ConsulConfigGateway consulConfigGateway) {
+        this(config, refreshConfig, consulConfigGateway, new ResponseConfigSourceUtil());
     }
 
-    private ConsulConfigSourceProvider(ConsulConfig config, ConsulConfigGateway consulConfigGateway,
+    private ConsulConfigSourceProvider(ConsulConfig config, ConsulConfig.ConsulRefreshConfig refreshConfig,
+            ConsulConfigGateway consulConfigGateway,
             ResponseConfigSourceUtil responseConfigSourceUtil) {
         this.config = config;
+        this.refreshConfig = refreshConfig;
         this.consulConfigGateway = consulConfigGateway;
         this.responseConfigSourceUtil = responseConfigSourceUtil;
     }
@@ -55,7 +59,8 @@ class ConsulConfigSourceProvider implements ConfigSourceProvider {
                 Optional<Response> optionalResponse = consulConfigGateway.getValue(fullKey);
                 if (optionalResponse.isPresent()) {
                     result.add(
-                            responseConfigSourceUtil.toConfigSource(optionalResponse.get(), entry.getValue(), config.prefix));
+                            responseConfigSourceUtil.toConfigSource(optionalResponse.get(), entry.getValue(), config.prefix,
+                                    consulConfigGateway, config.ttl, refreshConfig.enabled));
                 } else {
                     String message = "Key '" + fullKey + "' not found in Consul.";
                     if (config.failOnMissingKey) {
