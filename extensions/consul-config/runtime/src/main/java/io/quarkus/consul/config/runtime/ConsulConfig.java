@@ -56,6 +56,19 @@ public class ConsulConfig {
     @ConfigItem(defaultValue = "true")
     boolean failOnMissingKey;
 
+    /**
+     * If set to true, the application will have a refresh endpoint. A HTTP GET request will trigger a refresh of
+     * the configuration.
+     */
+    @ConfigItem(defaultValue = "false")
+    public boolean refreshEnabled;
+
+    /**
+     * Time-to-live for the configuration from consul. If the ttl has expired, the config will be reloaded from consul
+     */
+    @ConfigItem
+    Optional<Duration> ttl;
+
     Map<String, ValueType> keysAsMap() {
         Map<String, ValueType> result = new LinkedHashMap<>();
         if (rawValueKeys.isPresent()) {
@@ -146,6 +159,22 @@ public class ConsulConfig {
          */
         @ConfigItem(defaultValue = "60S")
         public Duration readTimeout;
+    }
+
+    @ConfigRoot(name = "consul-config.refresh")
+    public static class ConsulRefreshConfig {
+        /**
+         * If set to true, the application will have a refresh endpoint. A HTTP GET request will trigger a refresh of
+         * the configuration.
+         */
+        @ConfigItem(defaultValue = "false")
+        public boolean enabled;
+
+        /**
+         * The path of the refresh endpoint
+         */
+        @ConfigItem(defaultValue = "/refresh")
+        public String path;
     }
 
 }

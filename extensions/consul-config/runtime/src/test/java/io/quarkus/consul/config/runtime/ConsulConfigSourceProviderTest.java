@@ -28,7 +28,8 @@ class ConsulConfigSourceProviderTest {
         ConsulConfig config = defaultConfig();
 
         ConsulConfigGateway mockGateway = mock(ConsulConfigGateway.class);
-        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, mockGateway);
+        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, new ConsulConfig.ConsulRefreshConfig(),
+                mockGateway);
 
         Iterable<ConfigSource> configSources = sut.getConfigSources(null);
         assertThat(configSources).isEmpty();
@@ -49,7 +50,8 @@ class ConsulConfigSourceProviderTest {
         // make sure the second is not resolved
         when(mockGateway.getValue("some/second")).thenReturn(Optional.empty());
 
-        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, mockGateway);
+        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, new ConsulConfig.ConsulRefreshConfig(),
+                mockGateway);
 
         assertThatThrownBy(() -> {
             sut.getConfigSources(null);
@@ -74,7 +76,8 @@ class ConsulConfigSourceProviderTest {
         // make sure the third is is properly resolved
         when(mockGateway.getValue("some/third")).thenReturn(createOptionalResponse("some/third", "other"));
 
-        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, mockGateway);
+        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, new ConsulConfig.ConsulRefreshConfig(),
+                mockGateway);
 
         Iterable<ConfigSource> configSources = sut.getConfigSources(null);
         assertThat(configSources).hasSize(2);
@@ -104,7 +107,8 @@ class ConsulConfigSourceProviderTest {
         when(mockGateway.getValue("greeting/name"))
                 .thenReturn(createOptionalResponse("greeting/name", "quarkus"));
 
-        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, mockGateway);
+        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, new ConsulConfig.ConsulRefreshConfig(),
+                mockGateway);
 
         Iterable<ConfigSource> configSources = sut.getConfigSources(null);
         assertThat(configSources).hasSize(2);
@@ -133,7 +137,8 @@ class ConsulConfigSourceProviderTest {
         when(mockGateway.getValue("whatever/greeting/name"))
                 .thenReturn(createOptionalResponse("whatever/greeting/name", "quarkus"));
 
-        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, mockGateway);
+        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, new ConsulConfig.ConsulRefreshConfig(),
+                mockGateway);
 
         Iterable<ConfigSource> configSources = sut.getConfigSources(null);
         assertThat(configSources).hasSize(2);
@@ -161,7 +166,8 @@ class ConsulConfigSourceProviderTest {
         when(mockGateway.getValue("second"))
                 .thenReturn(createOptionalResponse("second", "other.key=value"));
 
-        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, mockGateway);
+        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, new ConsulConfig.ConsulRefreshConfig(),
+                mockGateway);
 
         Iterable<ConfigSource> configSources = sut.getConfigSources(null);
         assertThat(configSources).hasSize(2);
@@ -191,7 +197,8 @@ class ConsulConfigSourceProviderTest {
         when(mockGateway.getValue("config/second"))
                 .thenReturn(createOptionalResponse("config/second", "other.key=value"));
 
-        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, mockGateway);
+        ConsulConfigSourceProvider sut = new ConsulConfigSourceProvider(config, new ConsulConfig.ConsulRefreshConfig(),
+                mockGateway);
 
         Iterable<ConfigSource> configSources = sut.getConfigSources(null);
         assertThat(configSources).hasSize(2);
@@ -217,6 +224,7 @@ class ConsulConfigSourceProviderTest {
         config.propertiesValueKeys = Optional.empty();
         config.prefix = Optional.empty();
         config.agent = new ConsulConfig.AgentConfig();
+        config.ttl = Optional.empty();
         return config;
     }
 
